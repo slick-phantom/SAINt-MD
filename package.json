@@ -5,7 +5,7 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "start": "node index.js",
+        "start": "npm install && node index.js",
         "pair": "node index.js --pair",
         "dev": "DEBUG=true node index.js",
         "dev-pair": "DEBUG=true node index.js --pair",
@@ -30,6 +30,7 @@
         "dotenv": "^16.3.1",
         "firebase-admin": "^13.5.0",
         "pino": "^8.15.0",
-        "semver": "^7.5.0"
+        "semver": "^7.5.0",
+        "wa-sticker-formatter": "^4.4.0"
     }
 }
