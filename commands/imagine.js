@@ -1,5 +1,4 @@
-[file name]: imagine.js
-[file content begin]
+
 import axios from "axios";
 
 export default {
@@ -96,4 +95,3 @@ function enhancePrompt(prompt) {
 
     return `${prompt}, ${selectedEnhancers.join(', ')}`;
 }
-[file content end]
