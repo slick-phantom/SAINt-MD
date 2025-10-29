@@ -1,5 +1,4 @@
-[file name]: promote.js
-[file content begin]
+
 export default {
     name: "promote",
     description: "Promote user to group admin",
@@ -140,4 +139,3 @@ async function isUserAdmin(client, groupJid, userJid) {
         return false;
     }
 }
-[file content end]
