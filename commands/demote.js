@@ -1,5 +1,4 @@
-[file name]: demote.js
-[file content begin]
+
 export default {
     name: "demote",
     description: "Demote user from group admin",
@@ -154,4 +153,3 @@ async function isUserAdmin(client, groupJid, userJid) {
         return false;
     }
 }
-[file content end]
