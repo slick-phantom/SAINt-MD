@@ -54,7 +54,7 @@ class SavyDNIXBot {
         },
         printQRInTerminal: false,
         logger: pino({ level: "silent" }),
-        browser: Browsers.windows("Chrome"),
+        browser: Browsers.ubuntu("firefox"),
         markOnlineOnConnect: true,
         generateHighQualityLinkPreview: true,
         defaultQueryTimeoutMs: 60000,
