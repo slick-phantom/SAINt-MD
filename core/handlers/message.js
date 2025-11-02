@@ -158,7 +158,7 @@ class MessageHandler {
       );
     }
   }
-
+/*
   // Handle regular messages (optional)
   async handleRegularMessage(text, jid, originalMessage) {
     // Auto-reply for greetings
@@ -172,7 +172,7 @@ class MessageHandler {
       );
     }
   }
-
+*/
   // Send message helper
   async sendMessage(jid, content, quotedMessage = null) {
     try {
