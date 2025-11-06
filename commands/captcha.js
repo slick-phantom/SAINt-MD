@@ -31,6 +31,7 @@ export default {
     name: "captcha",
     description: "Enable CAPTCHA verification for new members",
     category: "moderation",
+    groupAdminOnly: true,
     
     async execute(message, client, args) {
         try {
@@ -42,7 +43,7 @@ export default {
                 }, { quoted: message });
                 return;
             }
-
+/*
             const isAdmin = await isUserAdmin(client, chat, message.key.participant || message.key.remoteJid);
             if (!isAdmin) {
                 await client.sendMessage(chat, { 
@@ -50,7 +51,7 @@ export default {
                 }, { quoted: message });
                 return;
             }
-
+*/
             const action = args[0]?.toLowerCase();
             const settings = loadCaptchaSettings();
 
