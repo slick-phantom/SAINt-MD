@@ -3,6 +3,7 @@ export default {
     name: "delete",
     description: "Delete bot messages or quoted messages",
     category: "utility",
+    groupAdminOnly: true,
     
     async execute(message, client, args) {
         try {
