@@ -3,6 +3,7 @@ export default {
     name: "tagall",
     description: "Mention all group members",
     category: "utility",
+    groupAdminOnly: true,
     
     async execute(message, client, args) {
         try {
@@ -19,7 +20,7 @@ export default {
                 );
                 return;
             }
-
+/*
             // Check if user has admin permissions
             const isAdmin = await isUserAdmin(client, chat, message.key.participant || message.key.remoteJid);
             if (!isAdmin) {
@@ -32,7 +33,7 @@ export default {
                 );
                 return;
             }
-
+*/
             const customMessage = args.join(" ") || "📢 *ATTENTION EVERYONE!* 📢";
             
             // Show typing indicator
