@@ -67,6 +67,9 @@ class SavyDNIXBot {
       // Initialize handlers
       await this.initializeHandlers();
 
+      // ✅ NEW: Initialize moderation systems after commands are loaded
+      await this.initializeModerationSystems();
+
       // Update session info
       this.authManager.updateSessionInfo(phoneNumber, {
         status: "active",
@@ -99,6 +102,31 @@ class SavyDNIXBot {
     logger.info(`Registered ${commands.length} commands`);
   }
 
+  // ✅ NEW: Initialize moderation systems
+  async initializeModerationSystems() {
+    try {
+      // Get all loaded commands
+      const commands = this.commandHandler.getAllCommands();
+      
+      // Initialize anti-link system if available
+      const antilinkCommand = commands.find(cmd => cmd.name === 'antilink');
+      if (antilinkCommand && antilinkCommand.initialize) {
+        await antilinkCommand.initialize(this.client);
+        logger.info("✅ Anti-link system initialized");
+      }
+
+      // Initialize captcha system if available  
+      const captchaCommand = commands.find(cmd => cmd.name === 'captcha');
+      if (captchaCommand && captchaCommand.initialize) {
+        await captchaCommand.initialize(this.client);
+        logger.info("✅ CAPTCHA system initialized");
+      }
+
+    } catch (error) {
+      logger.error("Error initializing moderation systems:", error);
+    }
+  }
+
   // Set up event handlers
   setupEventHandlers(saveCreds) {
     this.client.ev.on("connection.update", (update) => {
@@ -112,6 +140,25 @@ class SavyDNIXBot {
     this.client.ev.on("messages.upsert", ({ messages }) => {
       if (this.messageHandler) {
         this.messageHandler.handleIncomingMessages(messages);
+      }
+    });
+
+    // ✅ NEW: Listen for group participants update (for CAPTCHA)
+    this.client.ev.on("group-participants.update", async (update) => {
+      try {
+        const { id, participants, action } = update;
+        
+        // When new members join
+        if (action === 'add') {
+          const captchaCommand = this.commandHandler?.getCommand('captcha');
+          if (captchaCommand?.handleNewMembers) {
+            for (const participant of participants) {
+              await captchaCommand.handleNewMembers(this.client, id, participant);
+            }
+          }
+        }
+      } catch (error) {
+        logger.error('Error handling group participants update:', error);
       }
     });
   }
