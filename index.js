@@ -32,7 +32,8 @@ async function initializeBot() {
     try {
         displayBanner();
         
-        // Initialize Redis session res
+        // Initialize Redis session restorer
+        const redisRestorer =  RedisSessionRestorer();
         
         // Check if SESSION_ID is provided in environment
         if (process.env.SESSION_ID) {
