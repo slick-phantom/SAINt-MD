@@ -34,9 +34,10 @@ async function initializeBot() {
         displayBanner();
         
         // Initialize Redis session restorer
-        const redisRestorer =  redisSessionRestorer()import dotenv from 'dotenv
-        */
-
+        const redisRestorer =  redisSessionRestorer()i
+       */
+import dotenv from 'dotenv';
+dotenv.config();
 import Bot from './core/bot.js';
 import logger from './utils/logger.js';
 import fs from 'fs';
