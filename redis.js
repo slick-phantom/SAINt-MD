@@ -10,7 +10,7 @@ class RedisSessionRestorer {
             port: 14715,
             username: 'default',
             password: 'oGRykO7ZnVfaKgjBBiD6bZQpiLlWYUhv',
-            tls: {} // Required for Redis Cloud
+            // Required for Redis Cloud
         });
 
         this.redis.on('connect', () => {
