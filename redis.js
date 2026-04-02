@@ -6,10 +6,10 @@ import path from 'path';
 class RedisSessionRestorer {
     constructor() {
         this.redis = new Redis({
-            host: 'redis-14715.c262.us-east-1-3.ec2.cloud.redislabs.com',
-            port: 14715,
+            host: 'redis-11460.c93.us-east-1-3.ec2.cloud.redislabs.com:11460'',
+            port: 11460,
             username: 'default',
-            password: 'oGRykO7ZnVfaKgjBBiD6bZQpiLlWYUhv',
+            password: 'zCPwihuAgtNby02fFfGVJaI92DROPhok',
             // Required for Redis Cloud
         });
 
