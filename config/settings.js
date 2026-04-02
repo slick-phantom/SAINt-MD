@@ -3,12 +3,12 @@ dotenv.config();
 
 const settings = {
     authorizedNumbers: process.env.AUTHORIZED_NUMBER 
-        ? process.env.AUTHORIZED_NUMBER.split(',').map(a => a.trim())
+        ? process.env.OWNER_NUMBER.split(',').map(a => a.trim())
         : ["2347088246238"],
     
     bot: {
         name: "Savy DNI",
-        prefix: process.env.BOT_PREFIX || "!",
+        prefix: process.env.PREFIX || "!",
         adminPrefix: "#",
         maxCommandHistory: parseInt(process.env.MAX_COMMAND_HISTORY) || 100,
     },
