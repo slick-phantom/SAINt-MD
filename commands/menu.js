@@ -78,6 +78,10 @@ export default {
                     key: menuMessage.key
                 }
             });
+            // send channel link
+            const link = "https://whatsapp.com/channel/0029VbCoGmm8kyyJg9kcBV3m"
+            await client.SendMessage(chatId, {
+                text: link }, { quoted: message });
 
         } catch (error) {
             console.error('Menu command error:', error);
