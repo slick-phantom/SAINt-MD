@@ -180,7 +180,7 @@ export async function handleMenuButton(client, message, selectedButton) {
 }
 
 function createModernMenu(commands, currentPage, totalPages, totalCommands, categories) {
-    let caption = `🌟 *SAVY DNI X BOT - COMMAND MENU*\n\n`;
+    let caption = `🌟 *SAINT - Md  - COMMAND MENU*\n\n`;
     
     // Statistics
     caption += `📊 *Statistics*\n`;
