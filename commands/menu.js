@@ -65,11 +65,19 @@ export default {
             const caption = createModernMenu(currentPage, pageIndex, pages.length, commands.length, categories);
             const buttons = createNavigationButtons(pageIndex, pages.length);
 
+            //send img 
+            const menuMessage = await client.sendMessage(
+        message.key.remoteJid,
+        {
+          image: { url: "https://i.postimg.cc/3R33G2hC/50153989-E437-4D89-B4BE-25C6DF37B61B.png" },
+          caption: caption, 
+            ...buttons
+        },
+        { quoted: message }
+      );
+
             // Send menu with reaction
-            const menuMessage = await client.sendMessage(chatId, {
-                text: caption,
-                ...buttons
-            }, { quoted: message });
+            
 
             // React to the menu message with 📜
             await client.sendMessage(chatId, {
