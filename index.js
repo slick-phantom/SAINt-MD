@@ -19,12 +19,12 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
             status: 'OK',
-            service: 'Savy DNI Bot',
+            service: 'SAINT MD',
             time: new Date().toISOString()
         }));
     } else {
         res.writeHead(200);
-        res.end('Savy DNI Bot ✅');
+        res.end('SAINT MD ✅');
     }
 });
 
@@ -100,7 +100,7 @@ async function initializeBot() {
 
 function displayBanner() {
     console.log("\n" + "═".repeat(50));
-    console.log("🤖  S A V Y   D N I   W H A T S A P P   B O T  🤖");
+    console.log("🤖 SAINT MD W H A T S A P P   B O T  🤖");
     console.log("═".repeat(50));
 }
 
@@ -126,7 +126,7 @@ function gracefulShutdown(signal) {
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Ping server running on port ${PORT}`);
     console.log(`🌐 Uptime check: https://your-app.onrender.com/ping`);
-    console.log(`created by darksniper follow on gitlab ✅✊`);
+    console.log(`created by Saint follow on github ✅✊`);
     initializeBot();
 });
 
