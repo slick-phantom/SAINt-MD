@@ -40,7 +40,7 @@ export default {
 
       // Create the caption
       const caption = `
-🤖 *savy.DNI.x Status Report*
+🤖 *SAINT MD Status Report*
 
 ⏰ *Uptime:* ${days}d ${hours}h ${minutes}m ${seconds}s
 
@@ -58,7 +58,7 @@ export default {
       await client.sendMessage(
         message.key.remoteJid,
         {
-          image: { url: "https://i.postimg.cc/Z5H73X1Q/Copilot-20251029-083045.png" },
+          image: { url: "https://i.postimg.cc/3R33G2hC/50153989-E437-4D89-B4BE-25C6DF37B61B.png" },
           caption: caption
         },
         { quoted: message }
