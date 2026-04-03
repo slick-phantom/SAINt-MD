@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
 
-// HTTP Server
+// HTTP Server for Uptime Checks
 const server = http.createServer((req, res) => {
     if (req.url === '/ping') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -35,107 +35,96 @@ async function initializeBot() {
         const supabaseRestorer = supabaseSessionRestorer;
         
         if (process.env.SESSION_ID) {
-            console.log(`🔍 Attempting to restore session: ${process.env.SESSION_ID}`);
+            console.log(`🔍 Supabase: Attempting to restore session [${process.env.SESSION_ID}]`);
             const restoreResult = await supabaseRestorer.restoreSession();
             
             if (restoreResult.success) {
-                console.log(`✅ Session restored: ${restoreResult.sessionId}`);
+                console.log(`✅ Supabase: Session restored successfully!`);
             } else {
-                console.log(`❌ Redis session restore failed: ${restoreResult.error}`);
+                console.log(`❌ Supabase: Restore failed: ${restoreResult.error}`);
                 console.log("💡 Falling back to local session check...");
             }
         } else {
-            console.log("ℹ️  No SESSION_ID provided, checking for local session...");
+            console.log("ℹ️ No SESSION_ID in .env, checking local /sessions/ folder...");
         }
         
+        // Wait a brief moment for filesystem sync if needed
         if (!sessionExists()) {
-            console.log("\n❌ No WhatsApp session found.");
-            console.log("\n💡 To use this bot:");
-            console.log("   1. Visit the pairing service to get a session");
-            console.log("   2. Set SESSION_ID in .env to restore from Redis");
-            console.log("   3. Or place creds.json in the sessions/ folder");
-            console.log("\n📁 Current sessions directory: ./sessions/");
+            console.log("\n❌ Authentication Failure: No WhatsApp session found.");
+            console.log("💡 Fixes:");
+            console.log("   1. Check your Supabase credentials (URL/KEY)");
+            console.log("   2. Ensure SESSION_ID matches an ID in your Supabase bucket");
+            console.log("   3. Or manually place creds.json in: ./sessions/");
             
             const availableSessions = await supabaseRestorer.searchSessions();
-            if (availableSessions.length > 0) {
-                console.log("\n📋 Available sessions in Redis:");
+            if (availableSessions && availableSessions.length > 0) {
+                console.log("\n📋 Found these Session IDs in Supabase:");
                 availableSessions.forEach(session => {
-                    console.log(`   📁 ${session.sessionId}`);
+                    console.log(`   📁 ID: ${session.sessionId}`);
                 });
-                console.log("\n💡 Copy any session ID above and set it as SESSION_ID in .env");
+                console.log("\n💡 Set one of these as your SESSION_ID in your hosting environment.");
             }
             
-            await supabaseRestorer.close();
+            // Clean up connection before exit
+            if (supabaseRestorer.close) await supabaseRestorer.close();
             process.exit(1);
         }
         
-        logger.info("Starting Savy DNI Bot...");
+        logger.info("Initializing Savy DNI Bot Core...");
         const bot = new SavyDniXBot();
         await bot.initialize();
-        logger.success("✅ Bot is now running and connected to WhatsApp!");
+        
+        logger.success("🚀 SUCCESS: Bot is connected to WhatsApp!");
         
         const status = bot.getStatus();
-        console.log("\n📊 Bot Status:");
-        console.log(`   Connected: ${status.isConnected ? "✅" : "❌"}`);
-        console.log(`   Session: ${process.env.SESSION_ID ? "🔄 Restored from Redis" : "📁 Local file"}`);
-        console.log(`   Commands: ${status.commandCount}`);
-        console.log(`   Ping Server: ✅ Running on port ${PORT}`);
-        console.log("\n💡 The bot is now running. Press Ctrl+C to stop.");
+        console.log("\n📊 SYSTEM REPORT:");
+        console.log(`   Connection:  ${status.isConnected ? "CONNECTED ✅" : "DISCONNECTED ❌"}`);
+        console.log(`   Source:      ${process.env.SESSION_ID ? "Cloud (Supabase)" : "Local Storage"}`);
+        console.log(`   Commands:    ${status.commandCount} loaded`);
+        console.log(`   Web Server:  Port ${PORT} ✅`);
         
-        await supabaseRestorer.close();
+        // Only close if your Supabase restorer has a close method (usually not needed for Supabase JS client)
+        if (supabaseRestorer.close) await supabaseRestorer.close();
         
     } catch (error) {
-        logger.error("Failed to start bot:", error.message);
-        
-        if (error.message.includes("No sessions available") || error.message.includes("creds.json")) {
-            console.log("\n❌ Session authentication failed.");
-            console.log("\n💡 The creds.json file may be invalid or expired.");
-            console.log("   Please obtain a new creds.json file from the pairing service.");
-        } else {
-            console.log("\n💡 Error details:", error.message);
-        }
+        logger.error("FATAL ERROR during startup:", error.message);
         process.exit(1);
     }
 }
 
 function displayBanner() {
     console.log("\n" + "═".repeat(50));
-    console.log("🤖 SAINT MD W H A T S A P P   B O T  🤖");
+    console.log("🤖        SAINT MD WHATSAPP BOT (Supabase Edition)      🤖");
     console.log("═".repeat(50));
 }
 
 function sessionExists() {
-    try {
-        return fs.existsSync(path.join(__dirname, "sessions", "creds.json"));
-    } catch (error) {
-        logger.error("Error checking session:", error);
-        return false;
-    }
+    // Ensure the path points to where your supabase.js downloads the file
+    const sessionPath = path.join(__dirname, "sessions", "creds.json");
+    return fs.existsSync(sessionPath);
 }
 
 function gracefulShutdown(signal) {
     console.log("\n");
-    logger.info(`Received ${signal}, shutting down...`);
+    logger.info(`Shutting down (Signal: ${signal})...`);
     server.close(() => {
-        console.log('🛑 HTTP server closed');
+        console.log('🛑 HTTP Server Offline');
         process.exit(0);
     });
 }
 
-// Start server
+// Start HTTP server then Init Bot
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Ping server running on port ${PORT}`);
-    console.log(`🌐 Uptime check: https://your-app.onrender.com/ping`);
-    console.log(`created by Saint follow on github ✅✊`);
+    console.log(`🚀 Uptime service active on port ${PORT}`);
     initializeBot();
 });
 
-// Process handlers
+// System Event Listeners
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("uncaughtException", (error) => {
-    logger.error("Uncaught Exception:", error);
+    logger.error("UNCAUGHT EXCEPTION:", error);
 });
 process.on("unhandledRejection", (reason, promise) => {
-    logger.error("Unhandled Rejection at:", promise, "reason:", reason);
+    logger.error("UNHANDLED REJECTION:", reason);
 });
