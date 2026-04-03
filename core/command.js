@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 class CommandHandler {
   constructor() {
-    this.commandsPath = path.join(__dirname, "../../commands");
+    this.commandsPath = path.join(__dirname, "../commands");
     this.commands = new Map();
   }
 
