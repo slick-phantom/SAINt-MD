@@ -5,7 +5,7 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "start": "npm install && node index.js",
+        "start": "node index.js",
         "pair": "node index.js --pair",
         "dev": "DEBUG=true node index.js",
         "dev-pair": "DEBUG=true node index.js --pair",
