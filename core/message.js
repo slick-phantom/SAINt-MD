@@ -4,65 +4,75 @@ import logger from '../utils/logger.js';
 const prefix = process.env.PREFIX || '!';
 const ownerNumber = process.env.OWNER_NUMBER + "@s.whatsapp.net";
 
+// Helper to safely extract text from any message type
+function extractMessageContent(msg) {
+    if (!msg.message) return "";
+
+    // Unwrap ephemeral/viewOnce wrappers
+    if (msg.message.ephemeralMessage) {
+        msg.message = msg.message.ephemeralMessage.message;
+    }
+    if (msg.message.viewOnceMessage) {
+        msg.message = msg.message.viewOnceMessage.message;
+    }
+
+    return msg.message.conversation ||
+           msg.message.extendedTextMessage?.text ||
+           msg.message.imageMessage?.caption ||
+           msg.message.videoMessage?.caption ||
+           msg.message.documentMessage?.caption ||
+           "";
+}
+
 export default async (sock, m, handler) => {
     try {
-        if (!m.messages[0]) return;
-        const msg = m.messages[0];
-        if (msg.key.fromMe) return; // Ignore bot's own messages
+        const msg = m.messages?.[0];
+        if (!msg || msg.key.fromMe) return; // ignore bot’s own messages
 
         const jid = msg.key.remoteJid;
         const isGroup = jid.endsWith('@g.us');
-        const messageContent = msg.message?.conversation || 
-                               msg.message?.extendedTextMessage?.text || 
-                               msg.message?.imageMessage?.caption || "";
+        const messageContent = extractMessageContent(msg);
 
-        // Check for prefix
+        // Ignore if no prefix
         if (!messageContent.startsWith(prefix)) return;
 
         // Parse command and args
-        const args = messageContent.slice(prefix.length).trim().split(/ +/);
-        const commandName = args.shift().toLowerCase();
+        const args = messageContent.slice(prefix.length).trim().split(/\s+/);
+        const commandName = args.shift()?.toLowerCase();
+        if (!commandName) return;
 
-        // Get command from handler
         const command = handler.getCommand(commandName);
         if (!command) return;
 
         // --- Metadata & Permissions ---
         const sender = msg.key.participant || msg.key.remoteJid;
         const isOwner = sender === ownerNumber;
-        
-        let groupMetadata = isGroup ? await sock.groupMetadata(jid) : null;
-        let participants = isGroup ? groupMetadata.participants : [];
-        let admins = participants.filter(p => p.admin).map(p => p.id);
-        
+
+        let groupMetadata = isGroup ? await sock.groupMetadata(jid).catch(() => null) : null;
+        let participants = groupMetadata?.participants || [];
+        let admins = participants.filter(p => p.admin !== null).map(p => p.id);
+
         const isSenderAdmin = admins.includes(sender);
-        const isBotAdmin = admins.includes(sock.user.id.split(':')[0] + "@s.whatsapp.net");
+        const botId = sock.user.id.split(':')[0] + "@s.whatsapp.net";
+        const isBotAdmin = admins.includes(botId);
 
         // --- Validation Checks ---
-        
-        // 1. Owner Only Check
         if (command.ownerOnly && !isOwner) {
-            return await sock.sendMessage(jid, { text: "❌ This command is restricted to the Bot Owner." }, { quoted: msg });
+            return sock.sendMessage(jid, { text: "❌ This command is restricted to the Bot Owner." }, { quoted: msg });
         }
-
-        // 2. Group Only Check
         if (command.groupOnly && !isGroup) {
-            return await sock.sendMessage(jid, { text: "❌ This command can only be used in groups." }, { quoted: msg });
+            return sock.sendMessage(jid, { text: "❌ This command can only be used in groups." }, { quoted: msg });
         }
-
-        // 3. Admin Only Check
         if (command.adminOnly && !isSenderAdmin && !isOwner) {
-            return await sock.sendMessage(jid, { text: "❌ You must be a group admin to use this." }, { quoted: msg });
+            return sock.sendMessage(jid, { text: "❌ You must be a group admin to use this." }, { quoted: msg });
         }
-
-        // 4. Bot Admin Check (If the command needs to kick/promote/link)
         if (command.botAdminRequired && !isBotAdmin) {
-            return await sock.sendMessage(jid, { text: "❌ I need to be an admin to perform this action." }, { quoted: msg });
+            return sock.sendMessage(jid, { text: "❌ I need to be an admin to perform this action." }, { quoted: msg });
         }
 
         // --- Execute Command ---
-        logger.info(`Command ${commandName} executed by ${sender} in ${isGroup ? 'Group' : 'Private'}`);
-        
+        logger.info(`⚡ Command "${commandName}" executed by ${sender} in ${isGroup ? 'Group' : 'Private'}`);
+
         await command.execute(sock, msg, {
             args,
             isGroup,
@@ -73,6 +83,6 @@ export default async (sock, m, handler) => {
         });
 
     } catch (error) {
-        logger.error("Error in message handler:", error);
+        logger.error("💥 Error in message handler:", error);
     }
 };
