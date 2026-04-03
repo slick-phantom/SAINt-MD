@@ -3,8 +3,7 @@ import makeWASocket, {
     useMultiFileAuthState, 
     DisconnectReason, 
     fetchLatestBaileysVersion,
-    makeCacheableSignalKeyStore,
-    defaultLogger
+    makeCacheableSignalKeyStore
 } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
@@ -25,7 +24,7 @@ export default async function startSaint() {
     const { version } = await fetchLatestBaileysVersion();
 
     // Silent logger override
-    defaultLogger.level = 'silent';
+    
 
     const sock = makeWASocket({
         version,
