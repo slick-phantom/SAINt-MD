@@ -58,7 +58,7 @@ export default async function startSaint() {
             // Send welcome with channel button
             sock.sendMessage(process.env.OWNER_NUMBER + "@s.whatsapp.net", {
                 text: "🚀 *Saint MD is now connected successfully!* 🎉\n\nStay updated by joining our official channel 👇\n\https://whatsapp.com/channel/0029VbCoGmm8kyyJg9kcBV3m"    
-        }
+        });
     });
 
     sock.ev.on('creds.update', saveCreds);
