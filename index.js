@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import http from 'http';
 import { fileURLToPath } from 'url';
-import redisSessionRestorer from './redis.js';
+import supabaseSessionRestorer from './supabase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,11 +32,11 @@ async function initializeBot() {
     try {
         displayBanner();
         
-        const redisRestorer = redisSessionRestorer;
+        const supabaseRestorer = supabaseSessionRestorer;
         
         if (process.env.SESSION_ID) {
             console.log(`🔍 Attempting to restore session: ${process.env.SESSION_ID}`);
-            const restoreResult = await redisRestorer.restoreSession();
+            const restoreResult = await supabaseRestorer.restoreSession();
             
             if (restoreResult.success) {
                 console.log(`✅ Session restored: ${restoreResult.sessionId}`);
@@ -56,7 +56,7 @@ async function initializeBot() {
             console.log("   3. Or place creds.json in the sessions/ folder");
             console.log("\n📁 Current sessions directory: ./sessions/");
             
-            const availableSessions = await redisRestorer.searchSessions();
+            const availableSessions = await supabaseRestorer.searchSessions();
             if (availableSessions.length > 0) {
                 console.log("\n📋 Available sessions in Redis:");
                 availableSessions.forEach(session => {
@@ -65,7 +65,7 @@ async function initializeBot() {
                 console.log("\n💡 Copy any session ID above and set it as SESSION_ID in .env");
             }
             
-            await redisRestorer.close();
+            await supabaseRestorer.close();
             process.exit(1);
         }
         
@@ -82,7 +82,7 @@ async function initializeBot() {
         console.log(`   Ping Server: ✅ Running on port ${PORT}`);
         console.log("\n💡 The bot is now running. Press Ctrl+C to stop.");
         
-        await redisRestorer.close();
+        await supabaseRestorer.close();
         
     } catch (error) {
         logger.error("Failed to start bot:", error.message);
