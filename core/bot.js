@@ -133,50 +133,21 @@ async function startSaint() {
             console.log('👥 Group participants update:', update);
         });
 
-        // --- FIXED MESSAGE HANDLER for Baileys 6.4.0 ---
+        // --- MESSAGE HANDLER - Pass raw message directly ---
         sock.ev.on('messages.upsert', async ({ messages, type }) => {
             console.log(`📨 Messages event | Type: ${type} | Count: ${messages.length}`);
             
-            // ONLY process new messages (not history)
-            if (type !== 'notify') {
-                console.log(`⏭️ Skipping ${type} messages (not new)`);
-                return;
-            }
+            // Only process new messages
+            if (type !== 'notify') return;
             
-            // Loop through ALL messages (not just first)
             for (const msg of messages) {
                 try {
                     // Skip own messages
-                    if (msg.key.fromMe) {
-                        console.log('⏭️ Skipping own message');
-                        continue;
-                    }
+                    if (msg.key.fromMe) continue;
+                    if (!msg.message) continue;
                     
-                    // Check if message exists
-                    if (!msg.message) {
-                        console.log('⚠️ No message property, skipping');
-                        continue;
-                    }
-                    
-                    // Handle undecryptable messages (WhatsApp bug)
-                    if (msg.messageStubType === 2) {
-                        console.log('⚠️ Undecryptable message (stub type 2) - WhatsApp bug');
-                        continue;
-                    }
-                    
-                    // Log received message
-                    const jid = msg.key.remoteJid;
-                    const name = sock.getName(jid);
-                    console.log(`💬 Message from ${name} (${jid})`);
-                    
-                    // Call your message handler with the full event structure
-                    // Passing chatUpdate format compatible with your message.js
-                    const chatUpdate = {
-                        messages: [msg],
-                        type: type
-                    };
-                    
-                    await messageHandler(sock, chatUpdate, handler);
+                    // Pass raw message to handler
+                    await messageHandler(sock, msg, handler);
                     
                 } catch (err) {
                     console.error('Error processing message:', err);
