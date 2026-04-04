@@ -2,7 +2,6 @@ import makeWASocket, { DisconnectReason, fetchLatestBaileysVersion, useMultiFile
 import pino from 'pino';
 import { Boom } from '@hapi/boom';
 import fs from 'fs';
-import chalk from 'chalk';
 
 import CommandHandler from './command.js';
 import messageHandler from './message.js';
@@ -66,25 +65,34 @@ async function startSaint() {
             const { connection, lastDisconnect } = update;
 
             if (connection === 'connecting') {
-                console.log(chalk.yellow('🔄 Connecting to WhatsApp...'));
+                console.log('🔄 Connecting to WhatsApp...');
             }
 
             if (connection === 'open') {
-                console.log(chalk.green('🤖 Bot Connected Successfully!'));
+                console.log('✅ Bot Connected Successfully!');
+
+                try {
+                    const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+                    await sock.sendMessage(botNumber, {
+                        text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!\n\n🔗 Join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029VbCoGmm8kyyJg9kcBV3m`
+                    });
+                } catch (error) {
+                    console.error('Error sending connection message:', error.message);
+                }
             }
 
             if (connection === 'close') {
                 const reason = new Boom(lastDisconnect?.error)?.output.statusCode;
                 if (reason === DisconnectReason.loggedOut) {
-                    console.log(chalk.red('❌ Logged out. Please re-authenticate.'));
+                    console.log('❌ Logged out. Please re-authenticate.');
                     try {
                         fs.rmSync('./sessions', { recursive: true, force: true });
-                        console.log(chalk.yellow('Session folder deleted.'));
+                        console.log('Session folder deleted.');
                     } catch (err) {
                         console.error('Error deleting session:', err);
                     }
                 } else {
-                    console.log(chalk.yellow('♻️ Connection lost. Reconnecting...'));
+                    console.log('♻️ Connection lost. Reconnecting...');
                     startSaint();
                 }
             }
@@ -150,3 +158,4 @@ async function startSaint() {
 export default startSaint;
 
 // Start the bot
+
