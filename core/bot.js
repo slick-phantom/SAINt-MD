@@ -1,4 +1,9 @@
-import makeWASocket, { DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState, jidDecode } from '@whiskeysockets/baileys';
+import makeWASocket, { 
+    DisconnectReason, 
+    fetchLatestBaileysVersion, 
+    useMultiFileAuthState, 
+    jidDecode 
+} from '@whiskeysockets/baileys';
 import pino from 'pino';
 import { Boom } from '@hapi/boom';
 import fs from 'fs';
@@ -19,13 +24,14 @@ async function startSaint() {
             browser: ['Ubuntu', 'Chrome', '20.0.04'],
             auth: state,
             markOnlineOnConnect: true,
-            syncFullHistory: false
+            syncFullHistory: false,
+            printQRInTerminal: true
         });
 
         // Save creds
         sock.ev.on('creds.update', saveCreds);
 
-        // --- Helpers like Xeon ---
+        // --- Helpers ---
         sock.decodeJid = (jid) => {
             if (!jid) return jid;
             if (/:\d+@/gi.test(jid)) {
@@ -62,7 +68,11 @@ async function startSaint() {
 
         // --- Connection handling ---
         sock.ev.on('connection.update', async (update) => {
-            const { connection, lastDisconnect } = update;
+            const { connection, lastDisconnect, qr } = update;
+
+            if (qr) {
+                console.log('📱 QR Code received - Scan with WhatsApp');
+            }
 
             if (connection === 'connecting') {
                 console.log('🔄 Connecting to WhatsApp...');
@@ -70,6 +80,7 @@ async function startSaint() {
 
             if (connection === 'open') {
                 console.log('✅ Bot Connected Successfully!');
+                console.log('📱 Bot Number:', sock.user.id);
 
                 try {
                     const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
@@ -122,31 +133,59 @@ async function startSaint() {
             console.log('👥 Group participants update:', update);
         });
 
-        // --- Message handling ---
-        sock.ev.on('messages.upsert', async (chatUpdate) => {
-            try {
-                const msg = chatUpdate.messages[0];
-                if (!msg.message || msg.key.fromMe) return;
-
-                if (msg.message.ephemeralMessage) msg.message = msg.message.ephemeralMessage.message;
-                if (msg.message.viewOnceMessage) msg.message = msg.message.viewOnceMessage.message;
-
-                const text = msg.message.conversation ||
-                             msg.message.extendedTextMessage?.text ||
-                             msg.message.imageMessage?.caption ||
-                             msg.message.videoMessage?.caption ||
-                             msg.message.documentMessage?.caption ||
-                             "";
-                console.log(`💬 Message received from ${sock.getName(msg.key.remoteJid)}: "${text}"`);
-
-                // 👉 Pass to your message.js
-                await messageHandler(sock, chatUpdate, handler);
-            } catch (err) {
-                console.error("Error in messages.upsert:", err);
+        // --- FIXED MESSAGE HANDLER for Baileys 6.4.0 ---
+        sock.ev.on('messages.upsert', async ({ messages, type }) => {
+            console.log(`📨 Messages event | Type: ${type} | Count: ${messages.length}`);
+            
+            // ONLY process new messages (not history)
+            if (type !== 'notify') {
+                console.log(`⏭️ Skipping ${type} messages (not new)`);
+                return;
+            }
+            
+            // Loop through ALL messages (not just first)
+            for (const msg of messages) {
+                try {
+                    // Skip own messages
+                    if (msg.key.fromMe) {
+                        console.log('⏭️ Skipping own message');
+                        continue;
+                    }
+                    
+                    // Check if message exists
+                    if (!msg.message) {
+                        console.log('⚠️ No message property, skipping');
+                        continue;
+                    }
+                    
+                    // Handle undecryptable messages (WhatsApp bug)
+                    if (msg.messageStubType === 2) {
+                        console.log('⚠️ Undecryptable message (stub type 2) - WhatsApp bug');
+                        continue;
+                    }
+                    
+                    // Log received message
+                    const jid = msg.key.remoteJid;
+                    const name = sock.getName(jid);
+                    console.log(`💬 Message from ${name} (${jid})`);
+                    
+                    // Call your message handler with the full event structure
+                    // Passing chatUpdate format compatible with your message.js
+                    const chatUpdate = {
+                        messages: [msg],
+                        type: type
+                    };
+                    
+                    await messageHandler(sock, chatUpdate, handler);
+                    
+                } catch (err) {
+                    console.error('Error processing message:', err);
+                }
             }
         });
 
         return sock;
+        
     } catch (error) {
         console.error('Error in startSaint:', error);
         await new Promise(res => setTimeout(res, 5000));
@@ -154,8 +193,4 @@ async function startSaint() {
     }
 }
 
-// --- Export like Xeon ---
 export default startSaint;
-
-// Start the bot
-
