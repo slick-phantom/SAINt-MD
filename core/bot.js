@@ -4,7 +4,7 @@ import { Boom } from '@hapi/boom';
 import fs from 'fs';
 import chalk from 'chalk';
 
-import CommandHandler from './CommandHandler.js';
+import CommandHandler from './command.js';
 import messageHandler from './message.js';
 
 async function startSaint() {
