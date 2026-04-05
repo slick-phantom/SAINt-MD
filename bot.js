@@ -9,14 +9,14 @@ import { Boom } from "@hapi/boom";
 import pino from "pino";
 import readline from "readline";
 import fs from "fs";
-import CommandHandler from "./utils/command.js";
+import CommandHandler from "./command.js";
 import logger from "./utils/logger.js";
 
 // Visual Helpers
 const banner = `
 \x1b[36m*******************************************
-* WHATSAPP BOT INITIALIZED         *
-* Powered by Baileys & Gemini       *
+* savy WHATSAPP BOT INITIALIZED         *
+* Powered by Baileys & Savy       *
 *******************************************\x1b[0m
 `;
 
