@@ -19,7 +19,7 @@ import axios from 'axios';
 import { handleMessages, handleGroupParticipantUpdate, handleStatus } from './main.js';
 import PhoneNumber from 'awesome-phonenumber';
 import { imageToWebp, videoToWebp, writeExifImg, writeExifVid } from './lib/exif.js';
-import { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetch, await as awaitFn, sleep, reSize } from './lib/myfunc.js';
+import { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, sleep, reSize } from './lib/myfunc.js';
 import pkg from '@whiskeysockets/baileys';
 const {
     default: makeWASocket,
@@ -44,15 +44,17 @@ import { parsePhoneNumber } from 'libphonenumber-js';
 import { PHONENUMBER_MCC } from '@whiskeysockets/baileys/lib/Utils/generics.js';
 import { rmSync, existsSync } from 'fs';
 import { join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import lightweight store
-import * as store from './lib/lightweight_store.js';
-
-// Import settings (contains newsletter config)
-import settings from './settings.js';
+import store from './lib/lightweight_store.js';
 
 // Initialize store
 store.readFromFile();
+import settings from './settings.js';
 setInterval(() => store.writeToFile(), settings.storeWriteInterval || 10000);
 
 // Memory optimization - Force garbage collection if available
@@ -79,22 +81,6 @@ global.botname = "SAINT BOT";
 global.themeemoji = "•";
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code");
 const useMobile = process.argv.includes("--mobile");
-
-// Helper function to get newsletter context info
-const getNewsletterContext = () => {
-    if (settings.newsletter && settings.newsletter.jid && settings.newsletter.name) {
-        return {
-            forwardingScore: 1,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: settings.newsletter.jid,
-                newsletterName: settings.newsletter.name,
-                serverMessageId: -1
-            }
-        };
-    }
-    return {}; // Return empty if no newsletter configured
-};
 
 // Only create readline interface if we're in an interactive environment
 const rl = process.stdin.isTTY ? readline.createInterface({ input: process.stdin, output: process.stdout }) : null;
@@ -165,12 +151,6 @@ async function startSaintBot() {
                     await handleMessages(SaintBot, chatUpdate, true);
                 } catch (err) {
                     console.error("Error in handleMessages:", err);
-                    if (mek.key && mek.key.remoteJid) {
-                        await SaintBot.sendMessage(mek.key.remoteJid, {
-                            text: '❌ An error occurred while processing your message.',
-                            contextInfo: getNewsletterContext()
-                        }).catch(console.error);
-                    }
                 }
             } catch (err) {
                 console.error("Error in messages.upsert:", err);
@@ -229,7 +209,7 @@ async function startSaintBot() {
 
             const pn = await import('awesome-phonenumber');
             if (!pn.default('+' + phoneNumberInput).isValid()) {
-                console.log(chalk.red('Invalid phone number. Please enter your full international number (e.g., 15551234567 for US, 447911123456 for UK, etc.) without + or spaces.'));
+                console.log(chalk.red('Invalid phone number. Please enter your full international number.'));
                 process.exit(1);
             }
 
@@ -241,7 +221,7 @@ async function startSaintBot() {
                     console.log(chalk.yellow(`\nPlease enter this code in your WhatsApp app:\n1. Open WhatsApp\n2. Go to Settings > Linked Devices\n3. Tap "Link a Device"\n4. Enter the code shown above`));
                 } catch (error) {
                     console.error('Error requesting pairing code:', error);
-                    console.log(chalk.red('Failed to get pairing code. Please check your phone number and try again.'));
+                    console.log(chalk.red('Failed to get pairing code.'));
                 }
             }, 3000);
         }
@@ -262,16 +242,6 @@ async function startSaintBot() {
                 console.log(chalk.magenta(` `));
                 console.log(chalk.yellow(`🌿 Connected to => ` + JSON.stringify(SaintBot.user, null, 2)));
 
-                try {
-                    const botNumber = SaintBot.user.id.split(':')[0] + '@s.whatsapp.net';
-                    await SaintBot.sendMessage(botNumber, {
-                        text: `🤖 Saint Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!`,
-                        contextInfo: getNewsletterContext()
-                    });
-                } catch (error) {
-                    console.error('Error sending connection message:', error.message);
-                }
-
                 await delay(1999);
                 console.log(chalk.yellow(`\n\n                  ${chalk.bold.blue(`[ ${global.botname || 'SAINT BOT'} ]`)}\n\n`));
                 console.log(chalk.cyan(`< ================================================== >`));
@@ -280,17 +250,13 @@ async function startSaintBot() {
                 console.log(chalk.magenta(`${global.themeemoji || '•'} WA NUMBER: ${owner}`));
                 console.log(chalk.green(`${global.themeemoji || '•'} 🤖 Bot Connected Successfully! ✅`));
                 console.log(chalk.blue(`Bot Version: ${settings.version}`));
-                
-                if (settings.newsletter && settings.newsletter.jid) {
-                    console.log(chalk.cyan(`📢 Newsletter: ${settings.newsletter.name}`));
-                }
             }
             
             if (connection === 'close') {
                 const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
                 const statusCode = lastDisconnect?.error?.output?.statusCode;
                 
-                console.log(chalk.red(`Connection closed due to ${lastDisconnect?.error}, reconnecting ${shouldReconnect}`));
+                console.log(chalk.red(`Connection closed, reconnecting ${shouldReconnect}`));
                 
                 if (statusCode === DisconnectReason.loggedOut || statusCode === 401) {
                     try {
@@ -299,7 +265,6 @@ async function startSaintBot() {
                     } catch (error) {
                         console.error('Error deleting session:', error);
                     }
-                    console.log(chalk.red('Session logged out. Please re-authenticate.'));
                 }
                 
                 if (shouldReconnect) {
@@ -310,25 +275,10 @@ async function startSaintBot() {
             }
         });
 
-        // ANTI-CALL IS COMPLETELY DISABLED
-        // No call handling - completely removed
-
+        // ANTI-CALL IS COMPLETELY REMOVED
+        
         SaintBot.ev.on('group-participants.update', async (update) => {
             await handleGroupParticipantUpdate(SaintBot, update);
-        });
-
-        SaintBot.ev.on('messages.upsert', async (m) => {
-            if (m.messages[0].key && m.messages[0].key.remoteJid === 'status@broadcast') {
-                await handleStatus(SaintBot, m);
-            }
-        });
-
-        SaintBot.ev.on('status.update', async (status) => {
-            await handleStatus(SaintBot, status);
-        });
-
-        SaintBot.ev.on('messages.reaction', async (status) => {
-            await handleStatus(SaintBot, status);
         });
 
         return SaintBot;
@@ -349,13 +299,13 @@ process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);
 });
 
-process.on('unhandledRejection', (err) {
+process.on('unhandledRejection', (err) => {
     console.error('Unhandled Rejection:', err);
 });
 
-let file = require.resolve(__filename);
+const file = path.resolve(process.argv[1]);
 fs.watchFile(file, () => {
     fs.unwatchFile(file);
-    console.log(chalk.redBright(`Update ${__filename}`));
+    console.log(chalk.redBright(`Update ${file}`));
     import(`${file}?update=${Date.now()}`);
 });
